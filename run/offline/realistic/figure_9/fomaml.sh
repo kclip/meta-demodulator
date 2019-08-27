@@ -1,0 +1,1 @@
+python ../../../../main_offline.py --if_no_bm1 --if_no_bm2 --jac_calc 300 --maml_inner_loop 9 --num_hidden_layer 3 --num_neurons_first 10 --num_neurons_second 30 --num_neurons_third 30 --num_epochs_meta 25000 --if_fix_random_seed

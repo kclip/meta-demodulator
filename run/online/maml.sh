@@ -1,0 +1,1 @@
+python ../../main_online.py --mode_for_selecting_online_schemes 0 --maml_inner_loop 8 --jac_calc 200 --num_hidden_layer 3 --num_neurons_first 10 --num_neurons_second 30 --num_neurons_third 30 --if_cycle --performance_threshold_accur 'threshold for reliability check' --mini_batch_size_meta_device 1 --num_epochs_meta 2000

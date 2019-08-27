@@ -1,0 +1,1 @@
+python ../../../../main_offline.py --num_dev 'number of meta-devices' --if_no_bm1 --if_no_bm2 --jac_calc 2 --reptile_inner_loop 10 --num_hidden_layer 3 --num_neurons_first 10 --num_neurons_second 30 --num_neurons_third 30 --lr_alpha_settings 0.01 --lr_beta_settings 0.01 --if_fix_random_seed

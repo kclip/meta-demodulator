@@ -1,0 +1,1 @@
+python ../../../../main_offline.py --if_no_bm2 --num_epochs_meta 0 --if_param_set_1 --power 1 --version_of_channel_train 1 --version_of_channel_test 1 --if_no_distortion --mini_batch_size_test_train 1 --lr_testtraining 0.1 --num_epochs_test_meta 0 --K_TEST_TE 1000  --num_devices_for_test 100 --modulation_order 5 --if_tanh  --num_hidden_layer 1 --num_neurons_first 30
