@@ -19,14 +19,14 @@ import scipy.io as sio
 def parse_args():
     parser = argparse.ArgumentParser(description='Meta Learning for Few Shot Learning')
     parser.add_argument('--mini_batch_size_meta', dest='mini_batch_size_meta', default=4, type=int) # mini batch size for meta-training
-    parser.add_argument('--mini_batch_size_test_train', dest='mini_batch_size_test_train', default=1, type=int) # mini batch size for training (adaptation) during meta-test
-    parser.add_argument('--mini_batch_size_bm2', dest='mini_batch_size_bm2', default=1, type=int) # mini batch size for joint training
-    parser.add_argument('--mini_batch_size_meta_device', dest='mini_batch_size_meta_device', default=1, type=int) # number of meta-devices to consider for one meta-update
-    parser.add_argument('--SNR_db', dest='SNR_db', default=15, type=int) # SNR in db
+    parser.add_argument('--mini_batch_size_test_train', dest='mini_batch_size_test_train', default=4, type=int) # mini batch size for training (adaptation) during meta-test
+    parser.add_argument('--mini_batch_size_bm2', dest='mini_batch_size_bm2', default=4, type=int) # mini batch size for joint training
+    parser.add_argument('--mini_batch_size_meta_device', dest='mini_batch_size_meta_device', default=20, type=int) # number of meta-devices to consider for one meta-update
+    parser.add_argument('--SNR_db', dest='SNR_db', default=20, type=int) # SNR in db
     parser.add_argument('--lr_beta_settings', dest='lr_beta_settings', default=0.001, type=float) # learning rate used for meta-update
-    parser.add_argument('--lr_alpha_settings', dest='lr_alpha_settings', default=0.001, type=float) # learning rate used during inner update
-    parser.add_argument('--num_epochs_meta', dest='num_epochs_meta', default=2000, type=int) # number of epochs for meta-training
-    parser.add_argument('--K_TEST_TE', dest='K_TEST_TE', default=1000, type=int) # number of payload symbols for meta-test (number of pilots used for meta-test can be controlled in the main file - num_pilots_list (line 413))
+    parser.add_argument('--lr_alpha_settings', dest='lr_alpha_settings', default=0.1, type=float) # learning rate used during inner update
+    parser.add_argument('--num_epochs_meta', dest='num_epochs_meta', default=500, type=int) # number of epochs for meta-training
+    parser.add_argument('--K_TEST_TE', dest='K_TEST_TE', default=10000, type=int) # number of payload symbols for meta-test (number of pilots used for meta-test can be controlled in the main file - num_pilots_list (line 413))
     parser.add_argument('--path_for_common_dir', dest='path_for_common_dir',
                         default='/default_folder/default_subfolder/', type=str) # default path
     parser.add_argument('--path_for_meta_training_set', dest='path_for_meta_training_set', default=None, type=str) # to use previously generated meta-training set (as if we are facing same situation for fair comparison in online)
@@ -43,8 +43,8 @@ def parse_args():
     parser.add_argument('--version_of_channel_test', dest='version_of_channel_test', default=2, type=int) # only for PAM case #2 is channel with rayleigh #1 # 1 is channel with -1 and 1 w.p. 0.5 each
     parser.add_argument('--modulation_order', dest='modulation_order', default=16, type=int) # 5: 4-PAM, 16: 16QAM
     parser.add_argument('--jac_calc', dest='jac_calc', default=200, type=int) # determines which meta-training solution to use: 1: MAML with full hessian computation (only works for inner loop = 2), 2: REPTILE, 200: MAML with hessian-vector approx. 300: FOMAML, 1001: CAVIA
-    parser.add_argument('--reptile_inner_loop', dest='reptile_inner_loop', default=10, type=int) # number of local update + meta update for reptile
-    parser.add_argument('--maml_inner_loop', dest='maml_inner_loop', default=8, type=int) # number of local update + meta update for maml, cavia, fomaml
+    parser.add_argument('--reptile_inner_loop', dest='reptile_inner_loop', default=2, type=int) # number of local update + meta update for reptile
+    parser.add_argument('--maml_inner_loop', dest='maml_inner_loop', default=2, type=int) # number of local update + meta update for maml, cavia, fomaml
     parser.add_argument('--if_cycle', dest='if_cycle', action='store_true', default=False) # sampling in a disjoint way for meta-training minibatch
     parser.add_argument('--if_mb_meta_change', dest='if_mb_meta_change', action='store_true',
                         default=False) # using different minibatch size for training and testing during meta-training
@@ -55,7 +55,7 @@ def parse_args():
     parser.add_argument('--if_see_meta_inside_tensorboard', dest='if_see_meta_inside_tensorboard', action='store_true',
                         default=False)  # plot during meta-learning
     parser.add_argument('--if_test_train_no_permute', dest='if_test_train_no_permute', action='store_true',
-                        default=False) # if true, do not shuffle the sequence of pilots to make one minibatch
+                        default=None) # if true, do not shuffle the sequence of pilots to make one minibatch
     parser.add_argument('--if_not_use_all_dev_in_one_epoch', dest='if_use_all_dev_in_one_epoch',
                         action='store_false',
                         default=True) # default: use all other devs before using same dev
@@ -67,7 +67,7 @@ def parse_args():
                         default=False) # if we want to continue meta-training from saved net
     parser.add_argument('--path_for_continueing_meta_net', dest='path_for_continueing_meta_net', default=None, type=str) # path of the saved net for continue training
     parser.add_argument('--power', dest='power',
-                        default=0.5, type=float)  # (args.power)^2 = actual power (energy)
+                        default=1, type=float)  # (args.power)^2 = actual power (energy)
     parser.add_argument('--if_fix_random_seed', dest='if_fix_random_seed',
                         action='store_true',
                         default=False) # fix random seed
@@ -89,6 +89,21 @@ def parse_args():
                         action='store_true', default=False) # if we want to run cavia (should be used with jac_calc = 1001)
     parser.add_argument('--num_context_para', dest='num_context_para',
                         default=10, type=int) # number of context parameters for cavia
+
+    parser.add_argument('--if_test_train_fix_seq_than_adapt_randomly',
+                        dest='if_test_train_fix_seq_than_adapt_randomly',
+                        action='store_true', default=False)
+
+    parser.add_argument('--if_test_train_fix_seq_than_adapt_lr', dest='if_test_train_fix_seq_than_adapt_lr',
+                        default=100,
+                        type=int)
+
+    parser.add_argument('--if_see_cos_similarity',
+                        dest='if_see_cos_similarity',
+                        action='store_true', default=False)
+
+
+
     ########## for online ################
     parser.add_argument('--if_not_unify_K_tr_K_te', dest='if_unify_K_tr_K_te', action='store_false',
                         default=True)  # do not divide meta-training set into two part
@@ -102,22 +117,19 @@ def parse_args():
                         type=int) # increased number of pilots during reliability check
     parser.add_argument('--num_epochs_ftl', dest='num_epochs_ftl', default=10000, type=int) # number of epochs for training for joint training (ftl stands for joint training)
 
-    parser.add_argument('--lr_testtraining_meta', dest='lr_testtraining_meta', default=0.001, type=float) # learning rate for adaptation during meta-test for meta-trained network
-    parser.add_argument('--lr_testtraining_tfs', dest='lr_testtraining_tfs', default=0.001, type=float) # learning rate for fixed initialization (tfs stands for fixed initialization)
-    parser.add_argument('--lr_testtraining_ftl', dest='lr_testtraining_ftl', default=0.001, type=float) # learning rate for adaptation for joint trained network
+    parser.add_argument('--lr_testtraining_meta', dest='lr_testtraining_meta', default=0.1, type=float) # learning rate for adaptation during meta-test for meta-trained network
+    parser.add_argument('--lr_testtraining_tfs', dest='lr_testtraining_tfs', default=0.005, type=float) # learning rate for fixed initialization (tfs stands for fixed initialization)
+    parser.add_argument('--lr_testtraining_ftl', dest='lr_testtraining_ftl', default=0.005, type=float) # learning rate for adaptation for joint trained network
 
-    parser.add_argument('--num_epochs_test_meta', dest='num_epochs_test_meta', default=10000, type=int) # number of epochs for adaptation during meta-test for meta-trained network
-    parser.add_argument('--num_epochs_test_tfs', dest='num_epochs_test_tfs', default=100000, type=int) # number of epochs for adaptation for fixed initialization
-    parser.add_argument('--num_epochs_test_ftl', dest='num_epochs_test_ftl', default=100000, type=int) # nubmer of epcchos for adaptation for joint trainined network
+    parser.add_argument('--num_epochs_test_meta', dest='num_epochs_test_meta', default=1000, type=int) # number of epochs for adaptation during meta-test for meta-trained network
+    parser.add_argument('--num_epochs_test_tfs', dest='num_epochs_test_tfs', default=1000, type=int) # number of epochs for adaptation for fixed initialization
+    parser.add_argument('--num_epochs_test_ftl', dest='num_epochs_test_ftl', default=1000, type=int) # nubmer of epcchos for adaptation for joint trainined network
 
     parser.add_argument('--lr_ftl', dest='lr_ftl', default=0.001, type=float) # learning rate during training for joint training (learning rate used for joint training)
-    parser.add_argument('--mini_batch_size_ftl', dest='mini_batch_size_ftl', default=4, type=int) # mini batch size for joint training (minibatch size during joint training)
+    parser.add_argument('--mini_batch_size_ftl', dest='mini_batch_size_ftl', default=16, type=int) # mini batch size for joint training (minibatch size during joint training)
     parser.add_argument('--if_save_whole_max_pilots', dest='if_save_whole_max_pilots', action='store_true',
                         default=False)  # we are not actually using the whole pilots but following efficiency, but generate for comparison with several experiments
     parser.add_argument('--mode_for_selecting_online_schemes', dest='mode_for_selecting_online_schemes', default=0, type=int) # 0: FTML, 1: TFS, 3: FTL,
-    parser.add_argument('--if_not_rejection_sampling_meta_train', dest='if_rejection_sampling_meta_train',
-                        action='store_false',
-                        default=True) # rejection sampling as in paper
     parser.add_argument('--if_use_tensorboard', dest='if_use_tensorboard',
                         action='store_true',
                         default=False) # whether use tensorboard to visualize during online learning
@@ -133,6 +145,43 @@ def parse_args():
     parser.add_argument('--tfs_start_ind_T', dest='tfs_start_ind_T', default=0, type=int) # for fixed initialization starting from middle of online schenrio, starting time index
     parser.add_argument('--K_TR_max_ref_tfs', dest='K_TR_max_ref_tfs', default=32, type=int) # for reference curve for fixed initialization, can be chosen from 0,1, ..., args.max_num_pilots_for_train
 
+    ## offline
+    parser.add_argument('--if_realistic_setting',
+                        dest='if_realistic_setting',
+                        action='store_true', default=False)
+
+    parser.add_argument('--if_awgn',
+                        dest='if_awgn',
+                        action='store_true', default=False)
+    parser.add_argument('--if_perfect_iq_imbalance_knowledge',
+                        dest='if_perfect_iq_imbalance_knowledge',
+                        action='store_true', default=False)
+
+    parser.add_argument('--if_perfect_csi',
+                        dest='if_perfect_csi',
+                        action='store_true', default=False)
+    parser.add_argument('--if_conven_commun',
+                        dest='if_conven_commun',
+                        action='store_true', default=False) # use with bm1 with M=16
+    parser.add_argument('--if_test_training_adam',
+                        dest='if_test_training_adam',
+                        action='store_true', default=False)
+
+    parser.add_argument('--if_adam_after_sgd',
+                        dest='if_adam_after_sgd',
+                        action='store_true', default=False)
+
+    parser.add_argument('--if_joint_or_tfs',
+                        dest='if_joint_or_tfs',
+                        action='store_true', default=False) # simple adapt
+
+    parser.add_argument('--toy_get_performance_during_meta_training',
+                        dest='toy_get_performance_during_meta_training',
+                        action='store_true', default=False)
+
+    parser.add_argument('--if_use_stopping_criteria_during_test_training',
+                        dest='if_use_stopping_criteria_during_test_training',
+                        action='store_false', default=None)
 
 
     args = parser.parse_args()
@@ -143,8 +192,63 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
+    if args.if_realistic_setting:
+        args.if_test_train_fix_seq_than_adapt_randomly = True
+        if args.if_use_stopping_criteria_during_test_training == None:
+            args.if_use_stopping_criteria_during_test_training = True
+        else:
+            pass
+
+        args.if_fix_te_num_during_meta_training = False
+        args.if_no_distortion = False
+        args.if_use_all_dev_in_one_epoch = False
+        args.meta_train_with_adam = True
+        if args.if_test_train_no_permute == None:
+            args.if_test_train_no_permute = True
+        else:
+            pass
+        args.SNR_db = 20
+        args.lr_alpha_settings = 0.1
+        args.lr_beta_settings = 0.001
+        args.lr_benchmark2 = 0.001
+        args.power = 1
+        args.modulation_order = 16
+        args.K_TEST_TE = 10000
+        args.if_use_stopping_criteria_during_meta_training = False
+        args.num_hidden_layer = 3
+        args.num_neurons_first = 10
+        args.num_neurons_second = 30
+        args.num_neurons_third = 30
+        args.num_context_para = 10
+        args.if_fix_random_seed = True
+        args.if_iq_imbalance = True
+        args.meta_training_query_mode = 2
+
+        if args.mode_for_selecting_online_schemes == 0: # 0: FTML, 1: TFS, 3: FTL,
+            args.if_test_train_fix_seq_than_adapt_lr = 20
+            args.mini_batch_size_meta = 4
+            args.mini_batch_size_test_train = 16
+        elif args.mode_for_selecting_online_schemes == 1: # this as conventional training... do not have to be fair...
+            args.if_test_train_fix_seq_than_adapt_lr = 1
+            args.mini_batch_size_test_train = 16
+            args.mini_batch_size_meta = 16
+            args.num_epochs_test_tfs = 100000
+            args.lr_testtraining_tfs = 0.001
+        elif args.mode_for_selecting_online_schemes == 3:
+            args.if_test_train_fix_seq_than_adapt_lr = 1
+            args.mini_batch_size_test_train = 16
+            args.mini_batch_size_meta = 16
+            args.lr_testtraining_ftl = 0.005
+        else:
+            raise NotImplementedError
+        args.if_use_tensorboard = False
+
+    else:
+        raise NotImplementedError
+
     print('Called with args:')
     print(args)
+    assert args.if_adap_criteria_use_uncertainty_loss == True
     if_cali = args.if_no_distortion
     if_symm = True # only active when args.if_no_distortion = True, binary channel
     if_bias = True # whether use bias for neural network
@@ -182,7 +286,7 @@ if __name__ == '__main__':
     if_cycle = args.if_cycle
 
     curr_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    common_dir = './' + path_for_common_dir + curr_time + '/'
+    common_dir = './online/' + path_for_common_dir + curr_time + '/'
 
     net_dir_for_test_result = common_dir + 'test_result/'
 
@@ -289,14 +393,6 @@ if __name__ == '__main__':
 
     #################### basic settings for IoT devs.
     channel_variance = 0.5
-    distortion_range0 = 0
-    distortion_range1 = 0.05
-    distortion_range3 = 0
-    distortion_range5 = 0
-    distortion_mean0 = 4
-    distortion_mean1 = 0.1
-    distortion_mean3 = 0
-    distortion_mean5 = 0
     num_dev = args.total_online_time
     K_TR_max = args.max_num_pilots_for_train
     K_TE_max = 0
@@ -326,8 +422,13 @@ if __name__ == '__main__':
     tx_pilots_array_per_round = []
     min_error_rate_array_per_round = []
     actual_error_rate_array_per_round = []
+    conven_error_rate_array_per_round = []
     actual_error_rate_array_per_round_at_first_reliability_success = []
     save_test_result_dict = {}
+
+    ### follows beta distribution for iq imbalance
+    basic_distribution_for_amplitude = torch.distributions.beta.Beta(5, 2)  # between 0 and 1
+    basic_distribution_for_phase = torch.distributions.beta.Beta(5, 2)  # between 0 and 1
 
     for ind_T in range(args.total_online_time):
         if args.if_tfs_start_from_middle:
@@ -360,21 +461,22 @@ if __name__ == '__main__':
         var = noise_variance  # variance of noise
         var_array = channel_variance * var_array  # variance of channel
 
-        mean_array0 = numpy.random.uniform(distortion_mean0 - distortion_range0, distortion_mean0 + distortion_range0,
-                                           1)
-        mean_array1 = numpy.random.uniform(distortion_mean1 - distortion_range1, distortion_mean1 + distortion_range1,
-                                           1)
-        mean_array3 = numpy.random.uniform(distortion_mean3 - distortion_range3, distortion_mean3 + distortion_range3,
-                                           1)
-        mean_array5 = numpy.random.uniform(distortion_mean5 - distortion_range5, distortion_mean5 + distortion_range5,
-                                           1)
+        ######## iq imbalance
+
+        mean_array0 = []
+        mean_array1 = []
+        for ind_dev_meta_train in range(1): # for curr dev.
+            ampl_beta_rv = basic_distribution_for_amplitude.sample()
+            phase_beta_rv = basic_distribution_for_phase.sample()
+            ampl_distortion_curr_dev = ampl_beta_rv * 0.15  # we need to multiply with max value: 0.15
+            phase_distortion_curr_dev = phase_beta_rv * (numpy.pi / 180) * 15  # 15 degree
+            mean_array0.append(ampl_distortion_curr_dev)
+            mean_array1.append(phase_distortion_curr_dev)
+        mean_array3 = []  # deprecated
+        mean_array5 = []  # deprecated
+
         name_of_the_net_for_net_dir = 'total_time:' + str(args.total_online_time) + 'M_order:' + str(M)  + 'model_type:' + net_name + 'noise_variance:' + str(
-            noise_variance) + 'channel_variance:' + str(channel_variance) + 'distortion_range:' + str(
-            distortion_range0) + ', ' + str(
-            distortion_range1) + ', ' + str(distortion_range3) + ', ' + str(
-            distortion_range5) + 'distortion_mean:' + str(
-            distortion_mean0) + ', ' + str(
-            distortion_mean1) + ', ' + str(distortion_mean3) + ', ' + str(distortion_mean5)
+            noise_variance) + 'channel_variance:' + str(channel_variance)
         net_dir_meta = common_dir + 'TB/' + 'meta_training_set/' + name_of_the_net_for_net_dir
 
         writer_per_dev_tot = []
@@ -464,7 +566,7 @@ if __name__ == '__main__':
         pickle.dump(total_data_set, f_for_train_set)
         f_for_train_set.close()
 
-        ############ generate real-test set
+        ############ generate real-test set # payload data
 
         if path_for_meta_test_set is not None: # load from existing
             path_common_dir_existing_test = path_for_meta_test_set
@@ -480,6 +582,16 @@ if __name__ == '__main__':
             channel_set_for_vis = test_training_whole_list[2]
             non_linearity_set_genie = test_training_whole_list[3]
 
+            curr_dev_csi = None
+            curr_dev_nonlinearity = None
+            if args.if_perfect_csi:
+                curr_dev_csi = channel_set_for_vis
+            if args.if_perfect_iq_imbalance_knowledge:
+                curr_dev_nonlinearity = non_linearity_set_genie
+
+            genie_set = [curr_dev_csi, curr_dev_nonlinearity]
+
+
         else:
             #### generate real-test set for once ###
             K_TEST_TR = 0  # we do not need test_train set in online
@@ -494,11 +606,21 @@ if __name__ == '__main__':
                 if_cali, if_symm,
                 test_train_version,
                 if_reuse_testtrain_pilot_symbols,
-                power, device)
+                power, device, args)
             test_training_set_over_meta_test_devs.append(test_training_set)
             channel_set_genie_over_meta_test_devs.append(channel_set_genie)
             channel_set_for_vis_over_meta_test_devs.append(channel_set_for_vis)
             non_linearity_set_genie_over_meta_test_devs.append(non_linearity_set_genie)
+
+            curr_dev_csi = None
+            curr_dev_nonlinearity = None
+            if args.if_perfect_csi:
+                curr_dev_csi = channel_set_for_vis
+            if args.if_perfect_iq_imbalance_knowledge:
+                curr_dev_nonlinearity = non_linearity_set_genie
+
+            genie_set = [curr_dev_csi, curr_dev_nonlinearity]
+
             ########################################
             test_training_whole_list = [test_training_set, channel_set_genie, channel_set_for_vis,
                                         non_linearity_set_genie]
@@ -521,76 +643,11 @@ if __name__ == '__main__':
         pickle.dump(test_training_whole_list, f_for_test_set)
         f_for_test_set.close()
 
-        ############### rejection sampling ######################
         K_TR_max_tmp = K_TR_max
         K_TE_max_tmp = 0
         train_set_tmp = torch.zeros(K_TR_max_tmp + K_TE_max_tmp, 4)
         train_set_tmp = train_set_tmp.to(device)
         pilot_total_set_num = K_TR_max_tmp // 16 # rej. samping per 16 pilots, o.w. same pilot repeated
-        if args.if_rejection_sampling_meta_train:
-            for iter_rej in range(pilot_total_set_num):
-                #rand_seq_for_meta_train = torch.randperm(K_TR_max_tmp + K_TE_max_tmp)
-                rand_seq_for_meta_train = torch.randperm(16)
-                for ind_num_pilots in range(16):
-                    ind_num_pilots = ind_num_pilots + iter_rej * 16
-                    if ind_num_pilots % 4 == 0:
-                        signal_abs = 0
-                        ind_tmp = 0
-                        while signal_abs != 2:
-                            curr_ind_tmp = rand_seq_for_meta_train[ind_tmp]
-                            curr_ind_tmp = curr_ind_tmp + iter_rej * 16
-                            train_set_tmp[ind_num_pilots, :] = total_data_set[ind_T, curr_ind_tmp, :]
-                            signal_abs = pow(train_set_tmp[ind_num_pilots, 0], 2) + pow(train_set_tmp[ind_num_pilots, 1], 2)
-                            ind_tmp += 1
-                        ##### now we need to remove ind_tmp -1 from rand_seq_for_meta_train ###
-                        rand_seq_for_meta_train = torch.cat(
-                            [rand_seq_for_meta_train[0:ind_tmp - 1], rand_seq_for_meta_train[ind_tmp:]])
-                    elif ind_num_pilots % 4 == 1:
-                        signal_abs = 0
-                        ind_tmp = 0
-                        while signal_abs != 10:
-                            curr_ind_tmp = rand_seq_for_meta_train[ind_tmp]
-                            curr_ind_tmp = curr_ind_tmp + iter_rej * 16
-                            train_set_tmp[ind_num_pilots, :] = total_data_set[ind_T, curr_ind_tmp, :]
-                            signal_abs = pow(train_set_tmp[ind_num_pilots, 0], 2) + pow(train_set_tmp[ind_num_pilots, 1], 2)
-                            ind_tmp += 1
-                            ##### now we need to remove ind_tmp -1 from rand_seq_for_meta_train ###
-                        rand_seq_for_meta_train = torch.cat(
-                            [rand_seq_for_meta_train[0:ind_tmp - 1], rand_seq_for_meta_train[ind_tmp:]])
-
-                    elif ind_num_pilots % 4 == 2:
-                        signal_abs = 0
-                        ind_tmp = 0
-                        while signal_abs != 10:
-                            curr_ind_tmp = rand_seq_for_meta_train[ind_tmp]
-                            curr_ind_tmp = curr_ind_tmp + iter_rej * 16
-                            train_set_tmp[ind_num_pilots, :] = total_data_set[ind_T, curr_ind_tmp, :]
-                            signal_abs = pow(train_set_tmp[ind_num_pilots, 0], 2) + pow(train_set_tmp[ind_num_pilots, 1], 2)
-                            ind_tmp += 1
-                            ##### now we need to remove ind_tmp -1 from rand_seq_for_meta_train ###
-                        rand_seq_for_meta_train = torch.cat(
-                            [rand_seq_for_meta_train[0:ind_tmp - 1], rand_seq_for_meta_train[ind_tmp:]])
-
-                    elif ind_num_pilots % 4 == 3:
-                        signal_abs = 0
-                        ind_tmp = 0
-                        while signal_abs != 18:
-                            curr_ind_tmp = rand_seq_for_meta_train[ind_tmp]
-                            curr_ind_tmp = curr_ind_tmp + iter_rej * 16
-                            train_set_tmp[ind_num_pilots, :] = total_data_set[ind_T, curr_ind_tmp, :]
-                            signal_abs = pow(train_set_tmp[ind_num_pilots, 0], 2) + pow(train_set_tmp[ind_num_pilots, 1], 2)
-                            ind_tmp += 1
-                            ##### now we need to remove ind_tmp -1 from rand_seq_for_meta_train ###
-                        rand_seq_for_meta_train = torch.cat(
-                            [rand_seq_for_meta_train[0:ind_tmp - 1], rand_seq_for_meta_train[ind_tmp:]])
-
-                    else:
-                        print('something wrong')
-                        raise NotImplementedError
-
-            total_data_set[ind_T, :, :] = train_set_tmp
-        else:
-            pass
         ####### start training -> fine-tuning -> performance check repetition #########
 
         error_rate_for_efficiency_list_for_min_error_rate = []
@@ -617,9 +674,11 @@ if __name__ == '__main__':
 
 
             if args.mini_batch_size_meta_device > ind_T + 1: # ind_T + 1: total num_dev
-                sampled_device_num = 1
+                sampled_device_num = ind_T + 1 #1
             else:
                 sampled_device_num = args.mini_batch_size_meta_device
+
+
 
             ############ meta-online #############
             if iter_for_finetuing == 0:
@@ -683,7 +742,7 @@ if __name__ == '__main__':
 
                         test_training_benchmark2(args, M, args.lr_ftl, args.mini_batch_size_ftl, net_ftl,
                                                  train_set_ftl, K_TR, K_TE, num_epochs_ftl,
-                                                 writer_ftl, online_mode, device, saved_model_PATH_ftl_intermediate)
+                                                 writer_ftl, online_mode, device, saved_model_PATH_ftl_intermediate, None, None)
 
                         torch.save(net_ftl.state_dict(), saved_model_PATH_ftl)
 
@@ -731,8 +790,8 @@ if __name__ == '__main__':
                     K_TEST_TE, args.num_epochs_test_meta,
                     saved_model_PATH_meta,
                     save_PATH_meta,
-                    test_training_set_curr, channel_set_genie, non_linearity_set_genie, False, noise_variance,
-                    power, device)
+                    test_training_set_curr, False, noise_variance,
+                    power, device, genie_set)
                 error_rate_meta = total_error_num_tmp_meta/total_pilot_num_tmp_meta
                 prob_error_array_meta.append(error_rate_meta)
                 uncertainty_loss_array_meta.append(uncertainty_loss_tmp_meta)
@@ -756,8 +815,8 @@ if __name__ == '__main__':
                     K_TEST_TE, args.num_epochs_test_tfs,
                     saved_model_PATH_tfs,
                     save_PATH_tfs,
-                    test_training_set_curr, channel_set_genie, non_linearity_set_genie, False, noise_variance,
-                    power, device)
+                    test_training_set_curr, args.if_conven_commun, noise_variance,
+                    power, device, genie_set)
 
                 error_rate_tfs = total_error_num_tmp_tfs / total_pilot_num_tmp_tfs
                 prob_error_array_tfs.append(error_rate_tfs)
@@ -782,8 +841,8 @@ if __name__ == '__main__':
                     K_TEST_TE, args.num_epochs_test_ftl,
                     saved_model_PATH_ftl,
                     save_PATH_ftl,
-                    test_training_set_curr, channel_set_genie, non_linearity_set_genie, False, noise_variance,
-                    power, device)
+                    test_training_set_curr, False, noise_variance,
+                    power, device, genie_set)
                 error_rate_ftl = total_error_num_tmp_ftl / total_pilot_num_tmp_ftl
                 prob_error_array_ftl.append(error_rate_ftl)
                 uncertainty_loss_array_ftl.append(uncertainty_loss_tmp_ftl)
@@ -855,6 +914,9 @@ if __name__ == '__main__':
         min_error_rate_array_per_round.append(min(error_rate_for_efficiency_list_for_min_error_rate))
         actual_error_rate_array_per_round.append(error_rate_for_efficiency_list_for_min_error_rate[-1])
 
+        if args.mode_for_selecting_online_schemes == 1:
+            conven_error_rate_array_per_round.append(theoretical_bound_tfs)
+
         if count_for_actual_error_rate_array_per_round_at_first_reliability_success == 0:
             actual_error_rate_array_per_round_at_first_reliability_success.append(error_rate_for_efficiency)
             min_effic_tmp_cross_check = 9999
@@ -874,6 +936,7 @@ if __name__ == '__main__':
         save_test_result_dict['total_success_per_threshold'] = success_num_array_per_round
         save_test_result_dict['total_pilot'] = tx_pilots_array_per_round
         save_test_result_dict['minimum_total_error_rate_deprecated'] = min_error_rate_array_per_round
+        save_test_result_dict['conven_error_rate'] = conven_error_rate_array_per_round # mmse or optimal # if mmse, fix num pilots as tfs ref curve...
         save_test_result_dict['actual_total_error_rate_with_total_pilot_always_totla_pilot'] = actual_error_rate_array_per_round
         save_test_result_dict['actual_total_error_rate_with_total_pilot_cut_at_rel_succ'] = actual_error_rate_array_per_round_at_first_reliability_success
         save_test_result_dict['error_rate_per_pilot_meta'] = prob_error_array_meta
