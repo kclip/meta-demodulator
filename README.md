@@ -1,7 +1,7 @@
 ## Meta-Demodulator
 
 This repository contains code for "[Learning to Demodulate from Few Pilots via Offline and Online Meta-Learning](https://arxiv.org/abs/1908.09049)" - 
-Sangwoo Park, Hyeryung Jang, Osvaldo Simeone, and Joonhyuk Kang (revised fully and to appear in IEEE Transactions on Signal Processing, arXiv post updated on 4 Dec. 2020)
+Sangwoo Park, Hyeryung Jang, Osvaldo Simeone, and Joonhyuk Kang (fully revised and to appear in IEEE Transactions on Signal Processing, arXiv post updated on 4 Dec. 2020)
 
 ### Updated (4 Dec. 2020) 
 
