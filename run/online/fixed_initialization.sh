@@ -1,1 +1,0 @@
-python ../../main_online.py --mode_for_selecting_online_schemes 1 --K_TR_max_ref_tfs 'fixed number of pilots'
