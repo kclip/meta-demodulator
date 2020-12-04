@@ -1,1 +1,0 @@
-python ../../../../main_offline.py --if_no_bm1 --if_no_bm2 --jac_calc 200 --maml_inner_loop 'number of local updates + 1' --num_hidden_layer 3 --num_neurons_first 10 --num_neurons_second 30 --num_neurons_third 30 --if_fix_random_seed
