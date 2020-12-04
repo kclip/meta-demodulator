@@ -15,6 +15,7 @@ import os
 import argparse
 import scipy.io as sio
 
+## start changing into finaly accepted TSP version
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Meta Learning for Few Shot Learning')
