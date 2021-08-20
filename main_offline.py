@@ -251,10 +251,6 @@ def parse_args():
                         dest='if_joint_or_tfs',
                         action='store_true', default=False) # simple adapt
 
-    parser.add_argument('--mmse_considering_iq',
-                        dest='mmse_considering_iq',
-                        action='store_true', default=False)  # simple adapt
-
 
     args = parser.parse_args()
     return args
@@ -340,8 +336,8 @@ if __name__ == '__main__':
         args.if_fix_random_seed = True
         args.if_iq_imbalance  = True
         args.meta_training_query_mode = 10
-        args.path_for_meta_test_set = './generated_data/offline_realistic/meta_test_set'
-        args.path_for_meta_training_set = './generated_data/offline_realistic/meta_train_set/num_dev/1000M_order/16model_type/deep_linear_net_with_3_hidden_layernoise_variance/0.05channel_variance/0.5.pckl'
+        args.path_for_meta_test_set = '../../../../../../generated_data/offline_realistic/meta_test_set'
+        args.path_for_meta_training_set = '../../../../../../generated_data/offline_realistic/meta_train_set/num_dev:1000/num_dev:1000M_order:16model_type:deep_linear_net_with_3_hidden_layernoise_variance:0.05channel_variance:0.5.pckl'
 
     else:
         pass
@@ -772,8 +768,8 @@ if __name__ == '__main__':
         ######################################################################################################
         print('start meta training for %d training device' % num_dev)
         print('start meta training for %d epochs' % num_epochs)
-        print('start meta training for %d pilots (meta training)' % K_TR)
-        print('start meta training for %d pilots (meta test)' % K_TE)
+        print('start meta training for %d pilots (support size)' % mini_batch_size_meta) 
+        print('start meta training for %d pilots (query size (total number of available query pilots can be larger -- depends on the meta-training data generation))' % K_TE)
         # meta_train(num_epochs)
         name_of_the_net_for_meta = 'meta' + name_of_the_net_for_net_dir
 
