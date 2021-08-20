@@ -7,6 +7,10 @@ Sangwoo Park, Hyeryung Jang, Osvaldo Simeone, and Joonhyuk Kang (fully revised a
 
 The code has been updated in order to capture more interesting aspects of meta-learning usages for demodulation (e.g., I/Q imbalance, comparison with conventional communication scheme: MMSE channel estimator + Maximum Likelihood demodulator). Essential part of meta-learning schemes has not been changed. Current version contains full code which may contain deprecated modules for final experiments (i.e., figures for the paper). Most essential experimental set-up has been organized in the paper in detail but if any ambiguity raises, please feel free to contact the authors (e.g., sangwoop@kaist.ac.kr).
 
+### Updated (20 Aug. 2021) 
+
+Run files and data sets for better reproducibility have been added. Minor bugs are fixed.
+
 ### Dependencies
 
 This program is written in python 3.7 and uses PyTorch 1.1.0 and scipy.
@@ -21,7 +25,7 @@ Tensorboard for pytorch is used for visualization (e.g., https://pytorch.org/doc
     ```
     python main_offline.py
     ```
-    For the default settings and other argument options, see top of `main_offline.py`
+    For the default settings and other argument options, please see top of `main_offline.py`.
     
 - Test model:
     
@@ -32,9 +36,7 @@ Tensorboard for pytorch is used for visualization (e.g., https://pytorch.org/doc
     
 -  In 'run' folder, basic examples (including experiments for the figures in the paper) can be found.
     
-   In 'saved_nets' folder, trained models with most preferable settings in the paper (network for Fig. 6, 7, 9) can be found.
-    
-   In 'generated_data' folder, meta-training and meta-test set with 100 meta-devices for the realistic scenario can be found. 
+   In 'generated_data' folder, meta-training and meta-test set for the realistic scenario can be found. 
 
 
 ### Usage for online scenario
