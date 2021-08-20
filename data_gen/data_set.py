@@ -71,15 +71,8 @@ def generating_noise_dist(var):
     return Noise
 
 def generating_distortion(mean_array, device_for_data):  # hardware's non-ideality
-    device = device_for_data
-    l = torch.empty(len(mean_array), 1)
-    for i in range(len(mean_array)):
-        Lambda = torch.distributions.normal.Normal(torch.tensor([mean_array[i]]),
-                                                   torch.tensor([0.0]))  # if we want to give rand. for coefficients
-        l_tmp = Lambda.sample()
-        l[i] = l_tmp
-    l = l.to(device)
-    return l
+    # mean_array is already some random variable -- this will be directly used for iq_imbalance funtion below
+    return mean_array
 
 
 def iq_imbalance(s, epsilon, delta, device):
@@ -530,8 +523,8 @@ def generating_online_training_set(args, curr_dev_char, total_data_set, K_TR_acc
         h = generating_channel(var_array, device)
         l_0 = generating_distortion(mean_array0, device)
         l_1 = generating_distortion(mean_array1, device)
-        l_3 = generating_distortion(mean_array3, device)
-        l_5 = generating_distortion(mean_array5, device)
+        l_3 = 0
+        l_5 = 0
         curr_dev_char = [h, l_0, l_1, l_3, l_5]
     else:
         print('load prev. generated channel and distortion for curr dev')

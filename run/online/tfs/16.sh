@@ -1,0 +1,1 @@
+python ../../../main_online.py  --if_realistic_setting  --adding_pilots_num_per_iter 16 --K_TR_max_ref_tfs 16 --if_tfs_start_from_middle --tfs_start_ind_T 499 --mode_for_selecting_online_schemes 1 --path_for_common_dir 'final/tfs/pilot/16/499/'

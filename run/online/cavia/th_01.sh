@@ -1,0 +1,1 @@
+python ../../../main_online.py --mode_for_selecting_online_schemes 0 --maml_inner_loop 2 --jac_calc 1001 --performance_threshold_accur 0.1 --if_cavia --mini_batch_size_meta_device 20 --if_use_tensorboard --if_realistic_setting --path_for_common_dir '/final/cavia/th_01/'

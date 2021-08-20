@@ -1,0 +1,1 @@
+python ../../../main_online.py --mode_for_selecting_online_schemes 3 --performance_threshold_accur 0 --if_use_tensorboard --if_realistic_setting --path_for_common_dir '/final/joint/th_0/'

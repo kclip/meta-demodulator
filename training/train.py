@@ -74,7 +74,7 @@ def cavia(args, iter_in_sampled_device, iter_in_sampled_device_positive_ch, iter
             y_with_context[:,:2] = y
             y_with_context[:,2:] = context_para # copying slices seems no prob....
             net_meta_intermediate = meta_net(if_relu=args.if_relu)
-            out = net_meta_intermediate(y_with_context, para_list_from_net_prime, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)
+            out = net_meta_intermediate(y_with_context, para_list_from_net_prime)
             ###################
             pure_loss = 0
             error_rate = 0
@@ -118,7 +118,7 @@ def cavia(args, iter_in_sampled_device, iter_in_sampled_device_positive_ch, iter
             y_with_context[:, :2] = y
             y_with_context[:, 2:] = context_para  # use not only data but all the gradients contained parameter
             ############ update network's parameter ###########
-            out = net_meta_intermediate(y_with_context, para_list_from_net_prime, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)
+            out = net_meta_intermediate(y_with_context, para_list_from_net_prime)
             pure_loss = 0
             error_rate = 0
             pure_loss, error_rate = cross_entropy_loss(pure_loss, error_rate, M, s, out)
@@ -243,7 +243,7 @@ def fomaml(args, iter_in_sampled_device, iter_in_sampled_device_positive_ch, ite
                 raise NotImplementedError
         ###################
         net_prime.zero_grad()
-        out = net_prime(y, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)  # inner loop update should be taken only temporarily.. net update should be done after seeing num_dev tasks
+        out = net_prime(y)  # inner loop update should be taken only temporarily.. net update should be done after seeing num_dev tasks
         ###################
         pure_loss = 0
         error_rate = 0
@@ -379,7 +379,6 @@ def maml(args, iter_in_sampled_device, iter_in_sampled_device_positive_ch, iter_
                     y = y_total[
                         perm_idx_for_support * one_block_size: perm_idx_for_support * one_block_size + mini_batch_size_meta,
                         :]
-                #print('iter', iter_idx_inner_loop, 's', s)
             else:
                 raise NotImplementedError
         else:
@@ -398,7 +397,7 @@ def maml(args, iter_in_sampled_device, iter_in_sampled_device_positive_ch, iter_
                 raise NotImplementedError
         ###################
         net_prime.zero_grad()
-        out = net_prime(y, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first) # inner loop update should be taken only temporarily.. net update should be done after seeing num_dev tasks
+        out = net_prime(y) # inner loop update should be taken only temporarily.. net update should be done after seeing num_dev tasks
         ###################
         pure_loss = 0
         error_rate = 0
@@ -447,7 +446,7 @@ def maml(args, iter_in_sampled_device, iter_in_sampled_device_positive_ch, iter_
         s = f_prime.s_footprint[ind_bp]
         y = f_prime.y_footprint[ind_bp]
         net_prime.zero_grad()
-        out = net_prime(y, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)
+        out = net_prime(y)
         loss = 0
         error_rate = 0
         loss, error_rate = cross_entropy_loss(loss, error_rate, M, s, out)
@@ -556,7 +555,7 @@ def reptile(args, iter_in_sampled_device, iter_in_sampled_device_positive_ch, it
 
         ###################
         net_prime.zero_grad()
-        out = net_prime(y, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first) # inner loop update should be taken only temporarily.. net update should be done after seeing num_dev tasks
+        out = net_prime(y) # inner loop update should be taken only temporarily.. net update should be done after seeing num_dev tasks
         ###################
         pure_loss = 0
         error_rate = 0
@@ -646,11 +645,11 @@ def meta_train(M, num_epochs, num_dev, net, net_prime, train_set, K_TR, K_TE, de
         else:
             mini_batch_size_meta_train = mini_batch_size_meta
             mini_batch_size_meta_test = mini_batch_size_meta
-        s = torch.zeros(mini_batch_size_meta_train, 2)
+        s = torch.zeros(mini_batch_size_meta_train, 2) # deprecated -- defined during each meta-learning functions (e.g., maml, cavia, ...)
         y = torch.zeros(mini_batch_size_meta_train, 2)
         s = s.to(device)
         y = y.to(device)
-        s_te = torch.zeros(mini_batch_size_meta_test, 2)
+        s_te = torch.zeros(mini_batch_size_meta_test, 2) # deprecated -- defined during each meta-learning functions (e.g., maml, cavia, ...)
         y_te = torch.zeros(mini_batch_size_meta_test, 2)
         s_te = s_te.to(device)
         y_te = y_te.to(device)
@@ -1175,7 +1174,7 @@ def test_training(args, M, lr_testtraining, mini_batch_size, net, test_training_
                 y_test[ind_in_minibatch] = y_test_total[mini_batch_idx*1:(mini_batch_idx+1)*1 ,:]
 
         net.zero_grad()
-        out = net(y_test, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)
+        out = net(y_test)
         loss = 0
         error_rate = 0
         loss, error_rate = cross_entropy_loss(loss, error_rate, M, s_test, out)
@@ -1308,7 +1307,7 @@ def test_training_cavia(args, M, lr_testtraining, mini_batch_size, net, test_tra
         y_with_context[:, :2] = y_test
         y_with_context[:, 2:] = context_para_tmp  # copying slices seems no prob....
         net.zero_grad()
-        out = net(y_with_context, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)
+        out = net(y_with_context)
         loss = 0
         error_rate = 0
         loss, error_rate = cross_entropy_loss(loss, error_rate, M, s_test, out)
@@ -1374,52 +1373,6 @@ def mmse_channel_estimation(args, M, lr_testtraining, mini_batch_size, net, test
     estiamated_channel_tensor[1] = numpy.imag(estiamated_channel)[0][0]
     print('est ch', estiamated_channel_tensor)
     return estiamated_channel_tensor
-
-### mmse channel estimator
-## For a certain device
-def mmse_channel_estimation_effective_channel_with_iq(args, M, lr_testtraining, mini_batch_size, net, test_training_set, K_TEST_TR, K_TEST_TE, num_epochs_test, device, save_PATH):
-    num_dev_test_training_set, _, _ = test_training_set.size()
-
-    assert num_dev_test_training_set == 1
-    test_training_set_unified = test_training_set
-
-    s_test_total = test_training_set_unified[0, :num_dev_test_training_set * K_TEST_TR, :2]
-    y_test_total = test_training_set_unified[0, :num_dev_test_training_set * K_TEST_TR, 2:]
-    ### A gen.
-    #A = numpy.zeros((K_TEST_TR, 1), dtype=complex)
-    A = numpy.zeros((K_TEST_TR, 2))
-
-    s_test_total_to_cpu = s_test_total.cpu().numpy()
-    y_test_total_to_cpu = y_test_total.cpu().numpy()
-
-    I = numpy.zeros((K_TEST_TR, K_TEST_TR))
-
-    for i in range(K_TEST_TR):
-        I[i, i] = 1
-
-    A = s_test_total_to_cpu
-
-    power = args.power
-    noise_var_complex = (pow(power, 2) * (10)) / (pow(10, args.SNR_db / 10))
-    noise_var = noise_var_complex/2
-
-    y_1 = y_test_total_to_cpu[:,0]
-    y_2 = y_test_total_to_cpu[:,1]
-
-    C_z = noise_var * I
-
-    inv_mat_tmp = inv(numpy.matmul(A, numpy.transpose(A)) + C_z)
-    W = numpy.matmul(numpy.transpose(A), inv_mat_tmp)
-    est_channel_1 = numpy.matmul(W, y_1)
-    est_channel_2 = numpy.matmul(W, y_2)
-
-    estiamated_channel_tensor = torch.zeros(2,2)
-    estiamated_channel_tensor[:,0] = torch.from_numpy(est_channel_1)
-    estiamated_channel_tensor[:, 1] = torch.from_numpy(est_channel_2)
-
-
-    print('est ch', torch.transpose(estiamated_channel_tensor, 0, 1))
-    return torch.transpose(estiamated_channel_tensor, 0, 1)
 
 
 ## For a certain device
@@ -1604,7 +1557,7 @@ def test_training_benchmark2(args, M, lr_bm2, mini_batch_size_bm2, net, test_tra
                           mini_batch_idx * mini_batch_size_bm2:(mini_batch_idx + 1) * mini_batch_size_bm2,
                           :]
         net.zero_grad()
-        out = net(y_train_val, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)
+        out = net(y_train_val)
         loss = 0
         error_rate = 0
         loss, error_rate = cross_entropy_loss(loss, error_rate, M, s_train_val, out)
@@ -1676,13 +1629,8 @@ def test_test_mul_dev(args, net_for_testtraining, num_test_iter, mini_batch_size
                             print(genie_set[0])
                             print(genie_set[0][0])
                     else:
-                        if args.mmse_considering_iq:
-                            est_h = mmse_channel_estimation_effective_channel_with_iq(args, M, lr_testtraining, mini_batch_size, net,
-                                                            test_training_set, K_TEST_TR, K_TEST_TE,
-                                                            num_epochs_test, device, save_PATH)
-                        else:
-                            est_h = mmse_channel_estimation(args, M, lr_testtraining, mini_batch_size, net, test_training_set, K_TEST_TR, K_TEST_TE,
-                                          num_epochs_test, device, save_PATH)
+                        est_h = mmse_channel_estimation(args, M, lr_testtraining, mini_batch_size, net, test_training_set, K_TEST_TR, K_TEST_TE,
+                                        num_epochs_test, device, save_PATH)
                 else:
                     pass
             else:
@@ -1706,9 +1654,9 @@ def test_test_mul_dev(args, net_for_testtraining, num_test_iter, mini_batch_size
             y_with_context_test = y_with_context_test.to(device)
             y_with_context_test[:, :2] = y_test
             y_with_context_test[:, 2:] = context_para_updated_for_curr_dev  # copying slices seems no prob....
-            out = net(y_with_context_test, args.if_deconv,  args.if_RTN, args.if_cavia, args.if_tanh_first)
+            out = net(y_with_context_test)
         else:
-            out = net(y_test, args.if_deconv, args.if_RTN, args.if_cavia, args.if_tanh_first)
+            out = net(y_test)
         ## loss function
         if not if_conven_commun:
             loss = 0
@@ -1831,11 +1779,8 @@ def test_test_mul_dev(args, net_for_testtraining, num_test_iter, mini_batch_size
                             cand_y[0] = cand_s[0]
                             cand_y[1] = cand_s[1]
                         else:
-                            if args.mmse_considering_iq:
-                                cand_y = torch.matmul(est_h, cand_s)
-                            else:
-                                cand_y[0] = est_h[0] * cand_s[0] - est_h[1] * cand_s[1]
-                                cand_y[1] = est_h[0] * cand_s[1] + est_h[1] * cand_s[0]
+                            cand_y[0] = est_h[0] * cand_s[0] - est_h[1] * cand_s[1]
+                            cand_y[1] = est_h[0] * cand_s[1] + est_h[1] * cand_s[0]
                         #print(y_test[ind_mb], cand_y)
 
                     out_conv[ind_mb, symb_ind] = 1 / torch.norm(
