@@ -5,7 +5,7 @@ Sangwoo Park, Hyeryung Jang, Osvaldo Simeone, and Joonhyuk Kang (fully revised a
 
 ### Updated (4 Dec. 2020) 
 
-The code has been updated in order to capture more interesting aspects of meta-learning usages for demodulation (e.g., I/Q imbalance, comparison with conventional communication scheme: MMSE channel estimator + Maximum Likelihood demodulator). Essential part of meta-learning schemes has not been changed. Current version contains full code which may contain deprecated modules for final experiments (i.e., figures for the paper). Most essential experimental set-up has been organized in the paper in detail but if any ambiguity raises, please feel free to contact the authors (e.g., sangwoop@kaist.ac.kr).
+The code has been updated in order to capture more interesting aspects of meta-learning usages for demodulation (e.g., I/Q imbalance, comparison with conventional communication scheme: MMSE channel estimator + Maximum Likelihood demodulator). Essential part of meta-learning schemes has not been changed. Current version contains full code which may contain deprecated modules for final experiments (i.e., figures for the paper). Most essential experimental set-up has been organized in the paper in detail but if any ambiguity raises, please feel free to contact the authors (e.g., sangwoo.park@kcl.ac.uk).
 
 ### Updated (20 Aug. 2021) 
 
